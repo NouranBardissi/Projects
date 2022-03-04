@@ -1,0 +1,80 @@
+SQL Queries
+For the presented questions
+Q1) 
+WITH t1 AS(SELECT c.FirstName||' '||c.LastName AS customer_name,g.Name genre_name,t.Milliseconds milliseconds,SUM(il.UnitPrice*il.Quantity) total_sales
+            FROM Customer c
+	    JOIN Invoice i
+	     ON c.CustomerId=i.CustomerId
+	    JOIN InvoiceLine il
+	     ON i.InvoiceId=il.InvoiceId
+	    JOIN Track t
+	     ON il.TrackId=t.TrackId
+	    JOIN Genre g
+	     ON t.GenreId=g.GenreId
+	    WHERE g.Name ="Latin"
+	    GROUP BY 1,2
+	    ORDER BY 4 DESC
+	    LIMIT 10),
+t2 AS      (SELECT g.Name genre_name,AVG(t.Milliseconds) avg_all
+	    FROM Track t
+            JOIN Genre g
+            ON t.GenreId=g.GenreId
+            WHERE genre_name ="Latin")
+SELECT t1.customer_name,t1.genre_name,t1.milliseconds milliseconds
+FROM t1 
+JOIN t2
+ON t1.genre_name=t2.genre_name
+GROUP BY 1,2,3
+HAVING milliseconds >(SELECT avg_all FROM t2)
+ORDER BY 3 DESC;
+
+Q2)
+SELECT e.FirstName||' '||e.LastName AS employee_name, CASE WHEN SUM(i.Total) >= 800  THEN 'large' WHEN SUM(i.Total) >=750 AND SUM(i.Total) < 800 THEN 'medium'ELSE 'small' END AS total_category, COUNT(*) order_count,SUM(i.totaL) total_sales
+FROM Employee e
+JOIN Customer c
+ON e.EmployeeId=c.SupportRepId
+JOIN Invoice i
+ON c.CustomerId=i.CustomerId
+GROUP BY 1
+ORDER BY 3 DESC;
+
+Q3) 
+WITH t1 AS(SELECT e.FirstName||' '||e.LastName AS employee_name,i.BillingCountry,SUM(i.Total)total_invoices
+           FROM Employee e
+	   JOIN Customer c
+	     ON e.EmployeeId=c.SupportRepId
+	   JOIN Invoice i
+	     ON c.CustomerId=i.CustomerId
+	   GROUP BY 1,2
+	   ORDER BY 3 DESC ),
+t2      AS (SELECT BillingCountry,MAX(total_invoices) max_invoice
+	    FROM t1
+			GROUP BY 1)
+SELECT t1.employee_name,t2.BillingCountry,t2.max_invoice
+FROM t1
+JOIN t2 
+ON t1.total_invoices=t2.max_invoice AND t1.BillingCountry=t2.BillingCountry	
+
+Q4)
+ WITH t1 AS(SELECT c.FirstName||' '||c.LastName AS customer_name,SUM(i.Total)total_invoices
+            FROM Customer c
+            JOIN Invoice i
+	     ON c.CustomerId=i.CustomerId
+	    GROUP BY 1
+	    ORDER BY 2 DESC
+	    LIMIT 1),
+t2 AS      (SELECT c.FirstName||' '||c.LastName AS customer_name,g.Name,COUNT(*) number_of_times_track_genre_is_purchased
+            FROM Customer c
+            JOIN Invoice i
+             ON c.CustomerId=i.CustomerId
+            JOIN InvoiceLine il
+             ON il.InvoiceId=i.InvoiceId
+            JOIN Track t
+             ON il.TrackId=t.TrackId
+            JOIN Genre g
+             ON t.GenreId=g.GenreId
+           WHERE customer_name =(SELECT customer_name FROM t1)
+           GROUP BY 1,2
+           ORDER BY 3 DESC)
+SELECT *
+FROM t2				  
